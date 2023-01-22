@@ -6,20 +6,20 @@ library(ggplot2)
 library(ggpubr)
 display.brewer.all()
 
-#The example dataset used is from a fungicide sensitivity assay for Fusarium head blight pathogen to a triazole fungicide 'tebuconazole'. I want to 
-#visualize distribution of EC50 values of fungal isolates to tebuconazole using stripchart.
-TEB_drcoutput <- read.csv(file = "TEB_drcoutput.csv", sep = ",", header = TRUE)
-str(TEB_drcoutput)
-TEB_drcoutput$Trial <- as.factor(TEB_drcoutput$Trial)
-TEB_drcoutput$Isolate <- as.factor(TEB_drcoutput$Isolate)
-TEB_drcoutput$Year <- factor(TEB_drcoutput$Year, levels = c("Reference","R-Isolates","2008-Isolates","2010-Isolates","2013-Isolates"))
-TEB_drcoutput$Fungicide <- as.factor(TEB_drcoutput$Fungicide)
-TEB_drcoutput$Model <- as.factor(TEB_drcoutput$Model)
-TEB_drcoutput$AIC <- as.numeric(TEB_drcoutput$AIC)
-TEB_drcoutput$EC50 <- as.numeric(TEB_drcoutput$EC50)
+#The example dataset used is from a fungicide sensitivity assay for Fusarium head blight pathogen to two triazole fungicides 'tebuconazole' and 'prothioconazole'.
+#I want to visualize distribution of EC50 values of fungal isolates to tebuconazole using stripchart.
+EC50_drcoutput <- read.csv(file = "EC50_phenotypeanalysis_drcoutput.csv", sep = ",", header = TRUE)
+str(EC50_drcoutput)
+EC50_drcoutput$Trial <- as.factor(EC50_drcoutput$Trial)
+EC50_drcoutput$Isolate <- as.factor(EC50_drcoutput$Isolate)
+EC50_drcoutput$Year <- factor(EC50_drcoutput$Year, levels = c("Reference","R-Isolates","2008-Isolates","2010-Isolates","2013-Isolates"))
+EC50_drcoutput$Fungicide <- as.factor(EC50_drcoutput$Fungicide)
+EC50_drcoutput$Model <- as.factor(EC50_drcoutput$Model)
+EC50_drcoutput$AIC <- as.numeric(EC50_drcoutput$AIC)
+EC50_drcoutput$EC50 <- as.numeric(EC50_drcoutput$EC50)
 
-#Descriptive statistics by groups:
-group_by(TEB_drcoutput,Fungicide) %>% 
+#Descriptive statistics by groups: using dplyr package
+group_by(EC50_drcoutput,Fungicide) %>% 
   summarise(
     count = n(), 
     min = min(EC50, na.rm = TRUE),
@@ -29,20 +29,29 @@ group_by(TEB_drcoutput,Fungicide) %>%
     max = max(EC50, na.rm=TRUE),
     sd = sd(EC50, na.rm = TRUE)
   )
-summary(TEB_stripchart$EC50)
 
-# Box plot colored by groups: Species
-ggboxplot(TEBUCONAZOLE, x = "Trial", y = "EC50.estimate",
-          color = "Trial",
-          palette = c("#00AFBB", "#E7B800", "#FC4E07"))
+#Subset data to only contain tebuconazole dataset
+TEB_EC50 <- subset(EC50_drcoutput, (Fungicide=="Tebuconazole"))
 
-# Stripchart with ggstripchart
-ggstripchart(COMBINED, x = "Fungicide", y = "EC50", ylim=c(0,40),
+# Box plot grouped by fungicide:
+ggboxplot(EC50_drcoutput, x = "Fungicide", y = "EC50",
+          color = "Fungicide",
+          palette = brewer.pal(2, "Set2")
+
+#Box plot of tebuconazole EC50 values grouped by Year:
+ggboxplot(TEB_EC50, x="Year", y="EC50",
+          color="Year",
+          palette = brewer.pal(5, "Set2")
+
+# Stripchart to show distribution of EC50 values for both fungicides
+ggstripchart(EC50_drcoutput, x = "Fungicide", y = "EC50", ylim=c(0,40),
              ylab = "EC50 values",
-             order = c("Reference", "R-Isolates", "2008-Isolates", "2010-Isolates","2013-Isolates"),
+             #order = c("Reference", "R-Isolates", "2008-Isolates", "2010-Isolates","2013-Isolates"),
              color = "Fungicide",
-             palette = brewer.pal(5, "Set2"),
-             legend="none")
+             palette = brewer.pal(2, "Set2"), 
+             legend="none") #This prevents printing out legends
+          
+#Stripchart to show distribution of EC50 values for tebuconazole fungicide
 
 #stripchart with ggplot2
 ggplot(PRO_pheno, aes(x=factor(Year, levels = c("Reference", "R-Isolates", "2008-Isolates", "2010-Isolates", "2013-Isolates")), y=EC50, color=Year))+ labs(x="Year", y="EC50: Prothioconazole", tag = "B")+
@@ -52,7 +61,7 @@ ggplot(PRO_pheno, aes(x=factor(Year, levels = c("Reference", "R-Isolates", "2008
   theme(legend.position = "none", plot.tag.position = c(0.05,0.05))+
   theme(axis.text = element_text(size = 12), axis.title = element_text(size = 13))+
   stat_compare_means(method = "kruskal.test")+
-  annotate("text",x=5,y=3.5,label="F13_44", size=3)+
+  annotate("text",x=5,y=3.5,label="F13_44", size=3)+ #this adds text in the chart at (x,y) and labels them
   annotate("text",x=5, y=15.6, label="F13_83", size=3)+
   annotate("text", x=4.8, y=19.4, label="F13_84", size=3)+
   annotate("text", x=5.3, y=20, label="F13_159", size=3)+
